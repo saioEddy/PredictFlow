@@ -184,6 +184,42 @@ def parse_choice_input(text, all_columns):
     
     return chosen
 
+def clean_numeric_value(value):
+    """
+    清理数值字符串，去除单位（如MPA、MPA等）
+    
+    参数:
+        value: 待清理的值（可能是字符串或数值）
+    
+    返回:
+        清理后的数值
+    """
+    if pd.isna(value):
+        return value
+    
+    # 如果是数值类型，直接返回
+    if isinstance(value, (int, float)):
+        return value
+    
+    # 转换为字符串并清理
+    import re
+    str_value = str(value).strip()
+    
+    # 使用正则表达式提取数值部分（包括负号、小数点）
+    # 匹配模式：可选负号 + 数字 + 可选小数点 + 更多数字
+    match = re.search(r'-?\d+\.?\d*', str_value)
+    if match:
+        try:
+            return float(match.group())
+        except (ValueError, TypeError):
+            return np.nan
+    
+    # 如果正则匹配失败，尝试直接转换
+    try:
+        return float(str_value)
+    except (ValueError, TypeError):
+        return np.nan
+
 def simple_preprocess(df, inputs, outputs):
     """
     简单数据预处理：数值化和缺失值填充
@@ -198,16 +234,22 @@ def simple_preprocess(df, inputs, outputs):
     """
     sub = df[inputs + outputs].copy()
     
-    # 数值化转换
+    # 数值化转换（增强版：清理单位）
     for c in sub.columns:
         if sub[c].dtype == object:
-            # 尝试转换为数值
+            # 先尝试清理单位，再转换为数值
+            sub[c] = sub[c].apply(clean_numeric_value)
+        else:
+            # 对于已经是数值类型的列，也尝试清理（以防万一）
             sub[c] = pd.to_numeric(sub[c], errors="coerce")
     
     # 缺失值处理：用中位数填充
     for c in sub.columns:
         if sub[c].isna().any():
             med = sub[c].median()
+            if pd.isna(med):
+                # 如果中位数也是NaN，用0填充
+                med = 0
             sub[c] = sub[c].fillna(med)
             print(f"列 '{c}' 有缺失值，已用中位数 {med:.4f} 填充")
     
