@@ -1,0 +1,57 @@
+# Dockerfile 用于在 Linux 容器中打包 PredictFlow 后端
+# 使用官方 Python 镜像，确保生成 Linux 兼容的包
+# 支持 x86_64 和 arm64 架构
+
+FROM python:3.11-slim
+
+# 设置环境变量
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# 设置工作目录
+WORKDIR /build
+
+# 安装系统依赖（编译工具和基础库）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制项目文件
+# 先复制依赖文件，利用 Docker 缓存
+COPY requirements.txt setup.py bootstrap.py config.py ./
+
+# 复制代码和模型文件
+COPY api/ ./api/
+COPY scripts/ ./scripts/
+COPY models/ ./models/
+
+# 升级 pip 并安装构建工具
+RUN pip install --upgrade pip setuptools wheel
+
+# 安装 Python 依赖（先安装依赖，利用缓存）
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 安装 shiv
+RUN pip install --no-cache-dir shiv
+
+# 执行打包命令
+RUN python3 -m shiv \
+    -e bootstrap:main \
+    -o /build/predictflow-api.shiv \
+    -r requirements.txt \
+    .
+
+# 验证打包文件（slim 镜像没有 file 命令，只做基本验证）
+RUN test -f /build/predictflow-api.shiv && \
+    ls -lh /build/predictflow-api.shiv && \
+    echo "✅ 打包文件验证成功"
+
+# 设置输出目录
+VOLUME ["/output"]
+
+# 默认命令：将打包好的文件复制到输出目录
+CMD ["sh", "-c", "cp /build/predictflow-api.shiv /output/ && echo '✅ 打包文件已输出到 /output/predictflow-api.shiv' && ls -lh /output/predictflow-api.shiv"]

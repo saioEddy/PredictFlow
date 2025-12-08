@@ -1,0 +1,68 @@
+# Docker 构建时忽略的文件和目录
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# 构建产物
+build/
+dist/
+*.egg-info/
+
+# 前端文件（后端构建不需要）
+frontend/
+node_modules/
+
+# IDE 文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# 文档（构建时不需要）
+*.md
+TUTORIAL.md
+README*.md
+*.md
+
+# 测试文件
+test/
+tests/
+*_test.py
+test_*.py
+
+# 日志
+*.log
+
+# 数据文件（如果不需要在构建时包含）
+data/
+output/
+
+# Docker 相关
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# 脚本文件（除了必要的）
+*.sh
+!build_backend_docker.sh
+
+# macOS 特定文件
+.DS_Store
+
+# 临时文件
+*.tmp
+*.bak

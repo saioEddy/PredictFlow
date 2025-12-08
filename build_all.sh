@@ -17,8 +17,15 @@ mkdir -p "$RELEASE_DIR"
 # python3 -m shiv -e bootstrap:main -o "$BACKEND_SHIV" -r requirements.txt .
 # npm ci && npm run build
 
-echo "==> 打包后端"
-"$ROOT_DIR/build_backend.sh"
+# 检查是否使用 Docker 构建
+USE_DOCKER=${USE_DOCKER:-"false"}
+if [[ "$USE_DOCKER" == "true" ]] || [[ "$1" == "--docker" ]]; then
+    echo "==> 使用 Docker 打包后端（Linux 兼容）"
+    "$ROOT_DIR/build_backend_docker.sh"
+else
+    echo "==> 打包后端（本地环境）"
+    "$ROOT_DIR/build_backend.sh"
+fi
 
 echo "==> 打包前端"
 "$ROOT_DIR/build_frontend.sh"
