@@ -24,7 +24,7 @@ if [[ "$USE_DOCKER" == "true" ]] || [[ "$1" == "--docker" ]]; then
     "$ROOT_DIR/build_backend_docker.sh"
 else
     echo "==> 打包后端（本地环境）"
-    "$ROOT_DIR/build_backend.sh"
+"$ROOT_DIR/build_backend.sh"
 fi
 
 echo "==> 打包前端"

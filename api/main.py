@@ -4,6 +4,8 @@
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import os
@@ -20,14 +22,53 @@ from predict import load_model, prepare_input_data
 
 app = FastAPI(title="预测平台API", version="1.0.0")
 
-# 配置CORS，允许前端访问
+# 配置CORS，允许前端访问（如果前后端分离部署）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # React默认端口
+    allow_origins=["*"],  # 允许所有来源（生产环境应限制）
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 静态文件服务配置
+# 尝试挂载前端构建目录（如果存在）
+FRONTEND_BUILD_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend", "build")
+FRONTEND_DIST_DIR = os.path.join(os.path.dirname(__file__), "..", "dist", "full-release", "frontend-build")
+
+# 优先使用 full-release 中的前端文件，其次使用 frontend/build
+static_dir = None
+if os.path.exists(FRONTEND_DIST_DIR):
+    static_dir = FRONTEND_DIST_DIR
+elif os.path.exists(FRONTEND_BUILD_DIR):
+    static_dir = FRONTEND_BUILD_DIR
+
+if static_dir:
+    # 挂载静态资源目录（CSS, JS 等）
+    static_resources_dir = os.path.join(static_dir, "static")
+    if os.path.exists(static_resources_dir):
+        static_files = StaticFiles(directory=static_resources_dir)
+        app.mount("/static", static_files, name="static")
+    
+    # 为 React Router 提供支持：所有非 API 路径返回 index.html
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        # 排除 API 路径和 static 路径
+        if full_path.startswith("api/") or full_path.startswith("static/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        
+        # 如果请求的是文件（有扩展名），尝试返回该文件
+        if "." in full_path.split("/")[-1]:
+            file_path = os.path.join(static_dir, full_path)
+            if os.path.isfile(file_path):
+                return FileResponse(file_path)
+        
+        # 其他情况返回 index.html（支持 React Router）
+        index_path = os.path.join(static_dir, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+        else:
+            raise HTTPException(status_code=404, detail="Frontend not found")
 
 # 简单的用户认证（不需要数据库）
 # 实际项目中应该使用数据库和密码哈希

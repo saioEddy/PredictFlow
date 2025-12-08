@@ -3,7 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Predict.css';
 
-const API_BASE_URL = 'http://localhost:8000';
+// API 基础URL：如果设置了环境变量 REACT_APP_API_URL 则使用，否则使用相对路径
+// 相对路径适用于 FastAPI 同时提供前后端服务
+// 绝对路径适用于前后端分离部署
+// const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 function Predict() {
   const [load, setLoad] = useState('');
