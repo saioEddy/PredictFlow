@@ -57,3 +57,22 @@ models/
 .coverage
 htmlcov/
 
+# Node.js / React
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# React构建产物
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# 前端依赖锁定文件（可选，通常建议提交package-lock.json）
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+

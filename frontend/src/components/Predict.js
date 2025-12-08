@@ -1,0 +1,157 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import './Predict.css';
+
+const API_BASE_URL = 'http://localhost:8000';
+
+function Predict() {
+  const [load, setLoad] = useState('');
+  const [frequency, setFrequency] = useState('');
+  const [predictions, setPredictions] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [modelInfo, setModelInfo] = useState(null);
+  const navigate = useNavigate();
+
+  // 检查是否已登录
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    // 获取模型信息
+    const fetchModelInfo = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/model-info`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        setModelInfo(response.data);
+      } catch (err) {
+        console.error('获取模型信息失败:', err);
+      }
+    };
+
+    fetchModelInfo();
+  }, [navigate]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setPredictions(null);
+    setLoading(true);
+
+    const token = localStorage.getItem('token');
+
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/predict`,
+        {
+          load: parseFloat(load),
+          frequency: parseFloat(frequency)
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      setPredictions(response.data);
+    } catch (err) {
+      if (err.response?.status === 401) {
+        // token过期，跳转到登录页
+        localStorage.removeItem('token');
+        navigate('/login');
+      } else {
+        setError(err.response?.data?.detail || '预测失败，请检查输入数据');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  return (
+    <div className="predict-container">
+      <div className="predict-box">
+        <div className="header">
+          <h1>PredictFlow</h1>
+          <button onClick={handleLogout} className="logout-btn">退出登录</button>
+        </div>
+
+        <div className="form-section">
+          <h2>输入预测参数</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>载荷</label>
+              <input
+                type="number"
+                step="any"
+                value={load}
+                onChange={(e) => setLoad(e.target.value)}
+                placeholder="请输入载荷值"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>频率</label>
+              <input
+                type="number"
+                step="any"
+                value={frequency}
+                onChange={(e) => setFrequency(e.target.value)}
+                placeholder="请输入频率值"
+                required
+              />
+            </div>
+            {error && <div className="error-message">{error}</div>}
+            <button type="submit" disabled={loading} className="submit-btn">
+              {loading ? '预测中...' : '开始预测'}
+            </button>
+          </form>
+        </div>
+
+        {modelInfo && (
+          <div className="model-info">
+            <h3>模型信息</h3>
+            <p><strong>输入列：</strong>{modelInfo.inputs.join(', ')}</p>
+            <p><strong>输出列：</strong>{modelInfo.outputs.join(', ')}</p>
+          </div>
+        )}
+
+        {predictions && (
+          <div className="result-section">
+            <h2>预测结果</h2>
+            <div className="result-box">
+              <div className="input-display">
+                <h3>输入参数</h3>
+                <p>载荷: {predictions.input_data.load}</p>
+                <p>频率: {predictions.input_data.frequency}</p>
+              </div>
+              <div className="output-display">
+                <h3>预测输出</h3>
+                {Object.entries(predictions.predictions).map(([key, value]) => (
+                  <p key={key}>
+                    <strong>{key}:</strong> {typeof value === 'number' ? value.toFixed(4) : value}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default Predict;
+
