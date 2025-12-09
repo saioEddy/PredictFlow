@@ -3,11 +3,29 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Login.css';
 
-// API 基础URL：如果设置了环境变量 REACT_APP_API_URL 则使用，否则使用相对路径
-// 相对路径适用于 FastAPI 同时提供前后端服务
-// 绝对路径适用于前后端分离部署
-// const API_BASE_URL = process.env.REACT_APP_API_URL || '';
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+// API 基础URL配置优先级：
+// 1. 运行时配置（window.env.REACT_APP_API_URL）- 适用于 Tomcat 等生产环境
+// 2. 构建时环境变量（process.env.REACT_APP_API_URL）- 适用于构建时配置
+// 3. 相对路径（空字符串）- 适用于同域部署或通过反向代理访问
+// 注意：相对路径适用于后端在同一域名下，或通过 Tomcat 配置反向代理
+const getApiBaseUrl = () => {
+  // 优先使用运行时配置（适用于 Tomcat 部署）
+  if (typeof window !== 'undefined' && window.env && window.env.REACT_APP_API_URL) {
+    const url = window.env.REACT_APP_API_URL;
+    // 如果配置为占位符，则使用相对路径
+    if (url && url !== '$REACT_APP_API_URL' && url !== '') {
+      return url;
+    }
+  }
+  // 其次使用构建时环境变量
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  // 默认使用相对路径（适用于 Tomcat 反向代理或同域部署）
+  return '';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 function Login() {
   const [username, setUsername] = useState('');

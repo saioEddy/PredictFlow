@@ -2,7 +2,7 @@
 # FastAPI 后端主文件
 # 提供登录和预测接口
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -15,12 +15,44 @@ import joblib
 from typing import Optional
 from jose import jwt
 from datetime import datetime, timedelta
+import logging
+import time
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 # 添加scripts目录到路径
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 from predict import load_model, prepare_input_data
 
 app = FastAPI(title="预测平台API", version="1.0.0")
+
+# 添加请求日志中间件
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """记录所有HTTP请求的详细信息"""
+    start_time = time.time()
+    
+    # 记录请求信息
+    logger.info(f"[请求] {request.method} {request.url.path}")
+    logger.info(f"      客户端: {request.client.host if request.client else 'unknown'}:{request.client.port if request.client else 'unknown'}")
+    logger.info(f"      查询参数: {dict(request.query_params)}")
+    
+    # 处理请求
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        logger.info(f"[响应] {request.method} {request.url.path} - 状态码: {response.status_code} - 耗时: {process_time:.3f}秒")
+        return response
+    except Exception as e:
+        process_time = time.time() - start_time
+        logger.error(f"[错误] {request.method} {request.url.path} - 异常: {str(e)} - 耗时: {process_time:.3f}秒")
+        raise
 
 # 配置CORS，允许前端访问（如果前后端分离部署）
 app.add_middleware(
@@ -104,17 +136,33 @@ class PredictResponse(BaseModel):
 @app.on_event("startup")
 async def load_model_on_startup():
     global model_data
+    logger.info("=" * 60)
+    logger.info("FastAPI 应用启动中...")
+    logger.info("=" * 60)
+    logger.info(f"当前工作目录: {os.getcwd()}")
+    logger.info(f"Python 路径: {sys.path}")
+    logger.info(f"模型文件路径: {MODEL_PATH}")
+    logger.info(f"模型文件是否存在: {os.path.exists(MODEL_PATH)}")
+    
     try:
         if os.path.exists(MODEL_PATH):
+            logger.info(f"开始加载模型: {MODEL_PATH}")
             model_data = load_model(MODEL_PATH)
-            print(f"✓ 模型加载成功: {MODEL_PATH}")
-            print(f"  输入列: {model_data['inputs']}")
-            print(f"  输出列: {model_data['outputs']}")
+            logger.info(f"✓ 模型加载成功: {MODEL_PATH}")
+            logger.info(f"  输入列: {model_data['inputs']}")
+            logger.info(f"  输出列: {model_data['outputs']}")
+            logger.info(f"  模型类型: {type(model_data['model'])}")
         else:
-            print(f"⚠ 警告: 模型文件不存在: {MODEL_PATH}")
-            print(f"  请确保模型文件存在于 models/ 目录下")
+            logger.warning(f"⚠ 警告: 模型文件不存在: {MODEL_PATH}")
+            logger.warning(f"  请确保模型文件存在于 models/ 目录下")
+            logger.warning(f"  当前目录内容: {os.listdir(os.path.dirname(MODEL_PATH) if os.path.dirname(MODEL_PATH) else '.')}")
     except Exception as e:
-        print(f"✗ 模型加载失败: {str(e)}")
+        logger.error(f"✗ 模型加载失败: {str(e)}")
+        logger.exception(e)  # 打印完整的异常堆栈
+    
+    logger.info("=" * 60)
+    logger.info("FastAPI 应用启动完成，准备接收请求")
+    logger.info("=" * 60)
 
 # 生成JWT token
 def create_access_token(username: str):
@@ -142,17 +190,20 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(
 # 登录接口
 @app.post("/api/login")
 async def login(login_data: LoginRequest):
+    logger.info(f"[登录] 收到登录请求，用户名: {login_data.username}")
     username = login_data.username
     password = login_data.password
     
     if username in USERS and USERS[username] == password:
         token = create_access_token(username)
+        logger.info(f"[登录] 登录成功: {username}")
         return {
             "success": True,
             "token": token,
             "message": "登录成功"
         }
     else:
+        logger.warning(f"[登录] 登录失败: 用户名或密码错误 - {username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误"
@@ -223,10 +274,20 @@ async def predict(predict_data: PredictRequest, username: str = Depends(verify_t
 # 健康检查接口
 @app.get("/api/health")
 async def health_check():
-    return {
+    """健康检查端点，用于验证服务是否正常运行"""
+    logger.info("[健康检查] 收到健康检查请求")
+    result = {
         "status": "ok",
-        "model_loaded": model_data is not None
+        "model_loaded": model_data is not None,
+        "timestamp": datetime.now().isoformat()
     }
+    if model_data is not None:
+        result["model_info"] = {
+            "inputs": model_data['inputs'],
+            "outputs": model_data['outputs']
+        }
+    logger.info(f"[健康检查] 返回结果: {result}")
+    return result
 
 # 获取模型信息接口
 @app.get("/api/model-info")
@@ -241,5 +302,15 @@ async def get_model_info(username: str = Depends(verify_token)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    logger.info("=" * 60)
+    logger.info("直接运行 main.py，启动服务...")
+    logger.info("=" * 60)
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        log_level="info",
+        access_log=True,
+        use_colors=True
+    )
 
