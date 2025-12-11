@@ -302,13 +302,57 @@ async def get_model_info(username: str = Depends(verify_token)):
 
 if __name__ == "__main__":
     import uvicorn
+    import argparse
+    
+    # 解析命令行参数（与 bootstrap.py 保持一致）
+    parser = argparse.ArgumentParser(
+        description="启动 PredictFlow API 服务",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+示例:
+  # 使用默认端口 8000
+  python3 api/main.py
+  
+  # 指定端口
+  python3 api/main.py --port 8080
+  
+  # 指定主机和端口
+  python3 api/main.py --host 127.0.0.1 --port 9000
+  
+  # 使用环境变量（优先级低于命令行参数）
+  PORT=8080 python3 api/main.py
+        """
+    )
+    parser.add_argument(
+        "--port", "-p",
+        type=int,
+        default=None,
+        help="指定服务端口（默认: 8000 或环境变量 PORT）"
+    )
+    parser.add_argument(
+        "--host", "-H",
+        type=str,
+        default=None,
+        help="指定监听地址（默认: 0.0.0.0 或环境变量 HOST）"
+    )
+    
+    args = parser.parse_args()
+    
+    # 优先级：命令行参数 > 环境变量 > 默认值
+    host = args.host if args.host is not None else os.environ.get("HOST", "0.0.0.0")
+    port = args.port if args.port is not None else int(os.environ.get("PORT", "8000"))
+    
     logger.info("=" * 60)
     logger.info("直接运行 main.py，启动服务...")
     logger.info("=" * 60)
+    logger.info(f"监听地址: {host}:{port}")
+    logger.info(f"服务地址: http://{host}:{port}")
+    logger.info("=" * 60)
+    
     uvicorn.run(
         app,
-        host="0.0.0.0",
-        port=8000,
+        host=host,
+        port=port,
         log_level="info",
         access_log=True,
         use_colors=True

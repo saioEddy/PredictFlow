@@ -116,11 +116,18 @@ ssh user@server
 cd /opt/predictflow
 
 # 使用方案1（推荐）：单服务部署
+# 默认端口 8000
 python3 predictflow-api.shiv
 
+# 或指定端口（例如 8080）
+python3 predictflow-api.shiv --port 8080
+
+# 或使用便携式 Python 指定端口
+python-portable/bin/python3 backend/predictflow-api.shiv --port 8080
+
 # 或使用方案2：前后端分离
-# 终端1: 启动后端
-python3 predictflow-api.shiv
+# 终端1: 启动后端（指定端口）
+python3 predictflow-api.shiv --port 8080
 
 # 终端2: 启动前端
 cd frontend-build
@@ -163,11 +170,19 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/opt/predictflow
-ExecStart=/usr/bin/python3 /opt/predictflow/predictflow-api.shiv
+# 方式1: 使用命令行参数指定端口（推荐）
+ExecStart=/usr/bin/python3 /opt/predictflow/predictflow-api.shiv --port 8000
+
+# 方式2: 使用环境变量指定端口（备选）
+# ExecStart=/usr/bin/python3 /opt/predictflow/predictflow-api.shiv
+# Environment="HOST=0.0.0.0"
+# Environment="PORT=8000"
+
+# 如果使用便携式 Python，修改 ExecStart 路径
+# ExecStart=/opt/predictflow/python-portable/bin/python3 /opt/predictflow/predictflow-api.shiv --port 8000
+
 Restart=always
 RestartSec=10
-Environment="HOST=0.0.0.0"
-Environment="PORT=8000"
 
 [Install]
 WantedBy=multi-user.target
@@ -218,12 +233,46 @@ sudo systemctl status predictflow-frontend
 
 ### 修改后端端口
 
+后端服务支持三种方式指定端口（优先级从高到低）：
+
+**方式1: 命令行参数（推荐，最灵活）**
+
+```bash
+# 指定端口
+python3 predictflow-api.shiv --port 8080
+
+# 或使用短参数
+python3 predictflow-api.shiv -p 8080
+
+# 同时指定主机和端口
+python3 predictflow-api.shiv --host 0.0.0.0 --port 8080
+
+# 使用便携式 Python（如您提到的场景）
+python-portable/bin/python3 backend/predictflow-api.shiv --port 8080
+```
+
+**方式2: 环境变量**
+
 ```bash
 # 使用环境变量
-export PORT=8000
+export PORT=8080
 python3 predictflow-api.shiv
 
-# 或直接修改 bootstrap.py
+# 或一行命令
+PORT=8080 python3 predictflow-api.shiv
+
+# 同时指定主机
+HOST=0.0.0.0 PORT=8080 python3 predictflow-api.shiv
+```
+
+**方式3: 默认值**
+
+如果不指定，默认使用端口 `8000`。
+
+**查看帮助信息：**
+
+```bash
+python3 predictflow-api.shiv --help
 ```
 
 ### 修改前端端口（方案2）

@@ -4,6 +4,7 @@ import os
 import sys
 import logging
 import socket
+import argparse
 
 import uvicorn
 
@@ -40,9 +41,44 @@ def get_local_ip() -> str:
         return "unknown"
 
 def main() -> None:
-    """启动 uvicorn 服务，环境变量可覆盖 host/port。"""
-    host = os.environ.get("HOST", "0.0.0.0")
-    port = int(os.environ.get("PORT", "8000"))
+    """启动 uvicorn 服务，支持命令行参数、环境变量指定 host/port。"""
+    # 解析命令行参数
+    parser = argparse.ArgumentParser(
+        description="启动 PredictFlow API 服务",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+示例:
+  # 使用默认端口 8000
+  python3 predictflow-api.shiv
+  
+  # 指定端口
+  python3 predictflow-api.shiv --port 8080
+  
+  # 指定主机和端口
+  python3 predictflow-api.shiv --host 127.0.0.1 --port 9000
+  
+  # 使用环境变量（优先级低于命令行参数）
+  PORT=8080 python3 predictflow-api.shiv
+        """
+    )
+    parser.add_argument(
+        "--port", "-p",
+        type=int,
+        default=None,
+        help="指定服务端口（默认: 8000 或环境变量 PORT）"
+    )
+    parser.add_argument(
+        "--host", "-H",
+        type=str,
+        default=None,
+        help="指定监听地址（默认: 0.0.0.0 或环境变量 HOST）"
+    )
+    
+    args = parser.parse_args()
+    
+    # 优先级：命令行参数 > 环境变量 > 默认值
+    host = args.host if args.host is not None else os.environ.get("HOST", "0.0.0.0")
+    port = args.port if args.port is not None else int(os.environ.get("PORT", "8000"))
     
     # 获取本机IP
     local_ip = get_local_ip()
@@ -73,10 +109,10 @@ def main() -> None:
     logger.info("等待请求...")
     logger.info("=" * 60)
     logger.info("提示: 如果无法从外部访问，请检查:")
-    logger.info("  1. 防火墙是否开放了 8000 端口")
+    logger.info(f"  1. 防火墙是否开放了 {port} 端口")
     logger.info("  2. 运行: firewall-cmd --list-ports  (CentOS/RHEL)")
-    logger.info("  3. 运行: netstat -tlnp | grep 8000   (检查端口监听)")
-    logger.info("  4. 在服务器本地测试: curl http://localhost:8000/api/health")
+    logger.info(f"  3. 运行: netstat -tlnp | grep {port}   (检查端口监听)")
+    logger.info(f"  4. 在服务器本地测试: curl http://localhost:{port}/api/health")
     logger.info("=" * 60)
     
     # 启动 uvicorn，启用详细日志
