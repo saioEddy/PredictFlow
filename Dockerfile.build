@@ -5,9 +5,10 @@
 FROM python:3.11-slim
 
 # 设置环境变量
+# 移除 PIP_NO_CACHE_DIR，允许 pip 使用缓存加速后续构建
 ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_CACHE_DIR=/root/.cache/pip
 
 # 设置工作目录
 WORKDIR /build
@@ -30,15 +31,21 @@ COPY scripts/ ./scripts/
 COPY models/ ./models/
 
 # 升级 pip 并安装构建工具
+# 移除 --no-cache-dir，使用缓存加速
 RUN pip install --upgrade pip setuptools wheel
 
 # 安装 Python 依赖（先安装依赖，利用缓存）
-RUN pip install --no-cache-dir -r requirements.txt
+# 移除 --no-cache-dir，让 pip 缓存包文件，加速后续构建
+RUN pip install -r requirements.txt
 
 # 安装 shiv
-RUN pip install --no-cache-dir shiv
+# 移除 --no-cache-dir，使用缓存
+RUN pip install shiv
 
 # 执行打包命令
+# 注意：shiv 的 -r requirements.txt 会在构建时重新安装依赖
+# 但由于我们移除了 --no-cache-dir，pip 会使用缓存，第二次构建会快很多
+# shiv 需要重新安装是因为它要构建一个独立的、可移植的包
 RUN python3 -m shiv \
     -e bootstrap:main \
     -o /build/predictflow-api.shiv \

@@ -158,11 +158,11 @@ else
     exit 1
 fi
 
-echo ""
-echo "==> 清理 Docker 镜像（可选）"
-read -p "   是否删除构建镜像？(y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    docker rmi "$IMAGE_NAME" 2>/dev/null || true
-    echo "   ✅ 已清理构建镜像"
-fi
+# echo ""
+# echo "==> 清理 Docker 镜像（可选）"
+# read -p "   是否删除构建镜像？(y/N): " -n 1 -r
+# echo
+# if [[ $REPLY =~ ^[Yy]$ ]]; then
+#     docker rmi "$IMAGE_NAME" 2>/dev/null || true
+#     echo "   ✅ 已清理构建镜像"
+# fi
