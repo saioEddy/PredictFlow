@@ -39,10 +39,16 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
       return 0;
     };
     
+    // 字段映射：评定页面字段对应预测页面的预测值
+    // σ总_破管 (Mpa) 对应 应力强度最大值（Mpa）
     const stressIntensity = getValue(['应力强度最大值 (Mpa)', '应力强度最大值（Mpa）', '应力强度最大值']);
+    // 应变ε 对应 应变
     const strain = getValue(['应变']);
+    // 薄膜应力σm_破管 对应 线性化薄膜应力（Mpa）
     const membraneStress = getValue(['线性化薄膜应力 (Mpa)', '线性化薄膜应力（Mpa）', '线性化薄膜应力']);
+    // 薄膜加弯曲应力σm+b_破管 对应 膜+弯（Mpa）
     const membraneBending = getValue(['膜+弯 (Mpa)', '膜+弯（Mpa）', '膜+弯']);
+    // 阀杆变形S 对应 阀杆相对变形（mm）
     const stemDeformation = getValue(['阀杆相对变形 (mm)', '阀杆相对变形（mm）', '阀杆相对变形']);
 
     // 评定标准值（这些值可能需要从后端获取或配置）
@@ -58,6 +64,7 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
     const material = 'M1114-20MN5M'; // 当前材料
 
     // 计算总应力
+    // σ总_破管 (Mpa) = 应力强度最大值（Mpa）
     const totalStress = stressIntensity;
 
     // 旧代码：使用固定的0值
@@ -116,8 +123,10 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
     return {
       totalStress,
       material,
-      evaluations,
-      allPassed: Object.values(evaluations).every(e => e.passed)
+      evaluations
+      // 旧代码：在这里计算 allPassed
+      /* allPassed: Object.values(evaluations).every(e => e.passed) */
+      // 新代码：allPassed 在组件中根据 showAllEvaluations 计算
     };
   };
 
@@ -139,7 +148,25 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
     );
   }
 
-  const { totalStress, material, evaluations, allPassed } = evaluation;
+  const { totalStress, material, evaluations } = evaluation;
+
+  // 新代码：根据 σ总_破管 的值决定显示哪些评定内容
+  // 如果 σ总_破管 < 275MPa：显示所有4段判断内容
+  // 如果 σ总_破管 >= 275MPa：只显示应变ε和阀杆变形S
+  const stressThreshold = 275; // σ总_破管的阈值（MPa）
+  const showAllEvaluations = totalStress < stressThreshold;
+  
+  // 旧代码：allPassed 只考虑评定项的通过状态
+  /* const allPassed = showAllEvaluations 
+    ? Object.values(evaluations).every(e => e.passed)
+    : evaluations.strain.passed && evaluations.stemDeformation.passed; */
+  // 新代码：allPassed 需要同时考虑 σ总_破管 的值和评定项的通过状态
+  // 如果 σ总_破管 >= 阈值，直接判定为超出弹性范围
+  const allPassed = totalStress < stressThreshold 
+    ? (showAllEvaluations 
+        ? Object.values(evaluations).every(e => e.passed)
+        : evaluations.strain.passed && evaluations.stemDeformation.passed)
+    : false; // σ总_破管 >= 阈值时，直接判定为超出弹性范围
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -154,7 +181,10 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
           <div className="global-params">
             <div className="param-item">
               <span className="param-label">σ总_破管 (Mpa):</span>
-              <span className="param-value">{totalStress.toFixed(2)}</span>
+              {/* 旧代码：保留原始精度 */}
+              {/* <span className="param-value">{totalStress}</span> */}
+              {/* 新代码：与预测页面保持一致，显示4位小数 */}
+              <span className="param-value">{totalStress.toFixed(4)}</span>
             </div>
             <div className="param-item">
               <span className="param-label">当前材料:</span>
@@ -167,7 +197,10 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
             {allPassed ? '弹性范围内' : '超出弹性范围'}
           </div>
 
-          {/* 薄膜应力σm */}
+          {/* 旧代码：始终显示所有评定内容 */}
+          {/* 新代码：根据 σ总_破管 的值条件显示 */}
+          {/* 薄膜应力σm - 只在 σ总_破管 < 275MPa 时显示 */}
+          {showAllEvaluations && (
           <div className="evaluation-section">
             <div className="section-header">薄膜应力σm</div>
             <div className="section-content">
@@ -184,7 +217,10 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                 {/* 新代码：标签在输入框上方 */}
                 <div className="formula-item">
                   <span className="formula-label">σm_破管</span>
-                  <input type="text" className="formula-input" value={evaluations.membraneStress.sigmaM_burst.toFixed(2)} readOnly />
+                  {/* 旧代码：保留原始精度 */}
+                  {/* <input type="text" className="formula-input" value={evaluations.membraneStress.sigmaM_burst} readOnly /> */}
+                  {/* 新代码：与预测页面保持一致，显示4位小数 */}
+                  <input type="text" className="formula-input" value={evaluations.membraneStress.sigmaM_burst.toFixed(4)} readOnly />
                 </div>
                 <span className="formula-operator">+</span>
                 <div className="formula-item">
@@ -211,8 +247,10 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
               </div>
             </div>
           </div>
+          )}
 
-          {/* 薄膜加弯曲应力σm+b */}
+          {/* 薄膜加弯曲应力σm+b - 只在 σ总_破管 < 275MPa 时显示 */}
+          {showAllEvaluations && (
           <div className="evaluation-section">
             <div className="section-header">薄膜加弯曲应力σm+b</div>
             <div className="section-content">
@@ -243,7 +281,10 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                 {/* 新代码：标签在输入框上方 */}
                 <div className="formula-item">
                   <span className="formula-label">σm+b_破管</span>
-                  <input type="text" className="formula-input" value={evaluations.membraneBending.sigmaMB_burst.toFixed(2)} readOnly />
+                  {/* 旧代码：保留原始精度 */}
+                  {/* <input type="text" className="formula-input" value={evaluations.membraneBending.sigmaMB_burst} readOnly /> */}
+                  {/* 新代码：与预测页面保持一致，显示4位小数 */}
+                  <input type="text" className="formula-input" value={evaluations.membraneBending.sigmaMB_burst.toFixed(4)} readOnly />
                 </div>
                 <span className="formula-operator">+</span>
                 <div className="formula-item">
@@ -275,8 +316,9 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
               </div>
             </div>
           </div>
+          )}
 
-          {/* 应变ε */}
+          {/* 应变ε - 始终显示 */}
           <div className="evaluation-section">
             <div className="section-header">应变ε</div>
             <div className="section-content">
@@ -293,6 +335,9 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                 {/* 新代码：标签在输入框上方 */}
                 <div className="formula-item">
                   <span className="formula-label">ε_破管最大</span>
+                  {/* 旧代码：保留原始精度 */}
+                  {/* <input type="text" className="formula-input" value={evaluations.strain.epsilon_burst} readOnly /> */}
+                  {/* 新代码：与预测页面保持一致，显示4位小数 */}
                   <input type="text" className="formula-input" value={evaluations.strain.epsilon_burst.toFixed(4)} readOnly />
                 </div>
                 <span className="formula-operator">+</span>
@@ -312,7 +357,10 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                 <span className="formula-operator">&lt;</span>
                 <div className="formula-item">
                   <span className="formula-label">ε_材料的断裂极限应变ε</span>
-                  <input type="text" className="formula-input" value={evaluations.strain.limit.toFixed(2)} readOnly />
+                  {/* 旧代码：固定保留两位小数 */}
+                  {/* <input type="text" className="formula-input" value={evaluations.strain.limit.toFixed(2)} readOnly /> */}
+                  {/* 新代码：保留原始精度 */}
+                  <input type="text" className="formula-input" value={evaluations.strain.limit} readOnly />
                 </div>
               </div>
               <div className={`result-bar ${evaluations.strain.passed ? 'passed' : 'failed'}`}>
@@ -335,6 +383,9 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                 {/* 新代码：标签在输入框上方 */}
                 <div className="formula-item">
                   <span className="formula-label">相对变形S</span>
+                  {/* 旧代码：保留原始精度 */}
+                  {/* <input type="text" className="formula-input" value={evaluations.stemDeformation.deformation} readOnly /> */}
+                  {/* 新代码：与预测页面保持一致，显示4位小数 */}
                   <input type="text" className="formula-input" value={evaluations.stemDeformation.deformation.toFixed(4)} readOnly />
                 </div>
                 <span className="formula-operator">&lt;</span>
@@ -354,32 +405,34 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
             <div className="section-header">最终结论</div>
             <div className="section-content">
               <div className="conclusion-list">
-                {/* 旧代码：conclusion-item 没有背景色区分 */}
-                {/* <div className="conclusion-item">
-                  <span>薄膜应力σm:</span>
-                  <span className={evaluations.membraneStress.passed ? 'passed-text' : 'failed-text'}>
-                    {evaluations.membraneStress.passed ? '通过' : '不通过'}
-                  </span>
-                </div> */}
-                {/* 新代码：根据通过/不通过状态添加背景色类名 */}
+                {/* 旧代码：始终显示所有评定项 */}
+                {/* 新代码：根据 σ总_破管 的值条件显示 */}
+                {/* 薄膜应力σm - 只在 σ总_破管 < 275MPa 时显示 */}
+                {showAllEvaluations && (
                 <div className={`conclusion-item ${evaluations.membraneStress.passed ? 'passed' : 'failed'}`}>
                   <span>薄膜应力σm:</span>
                   <span className={evaluations.membraneStress.passed ? 'passed-text' : 'failed-text'}>
                     {evaluations.membraneStress.passed ? '通过' : '不通过'}
                   </span>
                 </div>
+                )}
+                {/* 薄膜加弯曲应力σm+b - 只在 σ总_破管 < 275MPa 时显示 */}
+                {showAllEvaluations && (
                 <div className={`conclusion-item ${evaluations.membraneBending.passed ? 'passed' : 'failed'}`}>
                   <span>薄膜加弯曲应力σm+b:</span>
                   <span className={evaluations.membraneBending.passed ? 'passed-text' : 'failed-text'}>
                     {evaluations.membraneBending.passed ? '通过' : '不通过'}
                   </span>
                 </div>
+                )}
+                {/* 应变ε - 始终显示 */}
                 <div className={`conclusion-item ${evaluations.strain.passed ? 'passed' : 'failed'}`}>
                   <span>应变ε:</span>
                   <span className={evaluations.strain.passed ? 'passed-text' : 'failed-text'}>
                     {evaluations.strain.passed ? '通过' : '不通过'}
                   </span>
                 </div>
+                {/* 阀杆变形S - 始终显示 */}
                 <div className={`conclusion-item ${evaluations.stemDeformation.passed ? 'passed' : 'failed'}`}>
                   <span>阀杆变形S:</span>
                   <span className={evaluations.stemDeformation.passed ? 'passed-text' : 'failed-text'}>
