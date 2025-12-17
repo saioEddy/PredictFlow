@@ -3,6 +3,10 @@ import './EvaluateModal.css';
 
 function EvaluateModal({ isOpen, onClose, predictions }) {
   const [activeTab, setActiveTab] = useState('continuous'); // 'continuous' 或 'discontinuous'
+  // 新代码：添加状态管理"其他"字段的值
+  const [sigmaMOther, setSigmaMOther] = useState(0);
+  const [sigmaMBOther, setSigmaMBOther] = useState(0);
+  const [epsilonOther, setEpsilonOther] = useState(0);
 
   if (!isOpen) return null;
 
@@ -43,7 +47,12 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
 
     // 评定标准值（这些值可能需要从后端获取或配置）
     const Sm = 110; // 薄膜应力允许值
-    const SmBending = 165; // 1.5Sm
+    // 旧代码：固定使用 1.5Sm
+    /* const SmBending = 165; // 1.5Sm */
+    // 新代码：根据标签页选择不同的标准值
+    const SmBendingContinuous = 165; // 1.5Sm = 165Mpa (结构连续区域)
+    const SmBendingDiscontinuous = 330; // 3Sm = 330Mpa (局部结构不连续区域)
+    const SmBending = activeTab === 'continuous' ? SmBendingContinuous : SmBendingDiscontinuous;
     const maxStrain = 0.43; // 材料的断裂极限应变
     const gap = 2; // 间隙 (mm)
     const material = 'M1114-20MN5M'; // 当前材料
@@ -51,8 +60,8 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
     // 计算总应力
     const totalStress = stressIntensity;
 
-    // 评定结果
-    const evaluations = {
+    // 旧代码：使用固定的0值
+    /* const evaluations = {
       membraneStress: {
         sigmaM_burst: membraneStress,
         sigmaM_other: 0,
@@ -70,6 +79,32 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
         epsilon_other: 0,
         limit: maxStrain,
         passed: (strain + 0) < maxStrain
+      },
+      stemDeformation: {
+        deformation: stemDeformation,
+        gap: gap,
+        passed: stemDeformation < gap
+      }
+    }; */
+    // 新代码：使用状态中的"其他"字段值，并根据标签页使用不同的限制值
+    const evaluations = {
+      membraneStress: {
+        sigmaM_burst: membraneStress,
+        sigmaM_other: sigmaMOther,
+        limit: Sm,
+        passed: (membraneStress + sigmaMOther) < Sm
+      },
+      membraneBending: {
+        sigmaMB_burst: membraneBending,
+        sigmaMB_other: sigmaMBOther,
+        limit: SmBending,
+        passed: (membraneBending + sigmaMBOther) < SmBending
+      },
+      strain: {
+        epsilon_burst: strain,
+        epsilon_other: epsilonOther,
+        limit: maxStrain,
+        passed: (strain + epsilonOther) < maxStrain
       },
       stemDeformation: {
         deformation: stemDeformation,
@@ -154,7 +189,16 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                 <span className="formula-operator">+</span>
                 <div className="formula-item">
                   <span className="formula-label">σm_其他</span>
-                  <input type="text" className="formula-input" value={evaluations.membraneStress.sigmaM_other.toFixed(2)} readOnly />
+                  {/* 旧代码：只读输入框 */}
+                  {/* <input type="text" className="formula-input" value={evaluations.membraneStress.sigmaM_other.toFixed(2)} readOnly /> */}
+                  {/* 新代码：可编辑输入框 */}
+                  <input 
+                    type="number" 
+                    className="formula-input" 
+                    value={sigmaMOther} 
+                    onChange={(e) => setSigmaMOther(parseFloat(e.target.value) || 0)}
+                    step="0.01"
+                  />
                 </div>
                 <span className="formula-operator">&lt;</span>
                 <div className="formula-item">
@@ -204,11 +248,25 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                 <span className="formula-operator">+</span>
                 <div className="formula-item">
                   <span className="formula-label">σm+b_其他</span>
-                  <input type="text" className="formula-input" value={evaluations.membraneBending.sigmaMB_other.toFixed(2)} readOnly />
+                  {/* 旧代码：只读输入框 */}
+                  {/* <input type="text" className="formula-input" value={evaluations.membraneBending.sigmaMB_other.toFixed(2)} readOnly /> */}
+                  {/* 新代码：可编辑输入框 */}
+                  <input 
+                    type="number" 
+                    className="formula-input" 
+                    value={sigmaMBOther} 
+                    onChange={(e) => setSigmaMBOther(parseFloat(e.target.value) || 0)}
+                    step="0"
+                  />
                 </div>
                 <span className="formula-operator">&lt;</span>
                 <div className="formula-item">
-                  <span className="formula-label">1.5Sm (Mpa)</span>
+                  {/* 旧代码：固定显示 1.5Sm */}
+                  {/* <span className="formula-label">1.5Sm (Mpa)</span> */}
+                  {/* 新代码：根据标签页显示不同的标准值 */}
+                  <span className="formula-label">
+                    {activeTab === 'continuous' ? '1.5Sm (Mpa)' : '3Sm (Mpa)'}
+                  </span>
                   <input type="text" className="formula-input" value={evaluations.membraneBending.limit} readOnly />
                 </div>
               </div>
@@ -240,7 +298,16 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                 <span className="formula-operator">+</span>
                 <div className="formula-item">
                   <span className="formula-label">ε_其他</span>
-                  <input type="text" className="formula-input" value={evaluations.strain.epsilon_other.toFixed(4)} readOnly />
+                  {/* 旧代码：只读输入框 */}
+                  {/* <input type="text" className="formula-input" value={evaluations.strain.epsilon_other.toFixed(4)} readOnly /> */}
+                  {/* 新代码：可编辑输入框 */}
+                  <input 
+                    type="number" 
+                    className="formula-input" 
+                    value={epsilonOther} 
+                    onChange={(e) => setEpsilonOther(parseFloat(e.target.value) || 0)}
+                    step="0.0001"
+                  />
                 </div>
                 <span className="formula-operator">&lt;</span>
                 <div className="formula-item">
