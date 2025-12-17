@@ -1,0 +1,322 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 10px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.evaluate-modal {
+  /* 旧代码：max-width: 1000px; */
+  /* 新代码：减小模态框宽度，使 header 不会太宽 */
+  max-width: 800px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  border-bottom: 2px solid #eee;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px 10px 0 0;
+}
+
+.modal-header h2 {
+  color: white;
+  margin: 0;
+  font-size: 24px;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 32px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s;
+}
+
+.close-btn:hover {
+  opacity: 0.8;
+}
+
+.modal-body {
+  padding: 30px;
+}
+
+/* 全局参数 */
+.global-params {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 15px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 5px;
+}
+
+.param-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.param-label {
+  font-weight: 500;
+  color: #333;
+}
+
+.param-value {
+  color: #667eea;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* 状态栏 */
+.status-bar {
+  background: #666;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+/* 评定区域 */
+.evaluation-section {
+  margin-bottom: 20px;
+  border: 1px solid #eee;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.section-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 20px;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.section-content {
+  padding: 20px;
+  background: white;
+}
+
+/* 计算公式 */
+.calculation-formula {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+/* 旧代码：标签在输入框旁边 */
+/* .formula-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  font-size: 14px;
+  width: 100px;
+  text-align: center;
+} */
+
+/* 新代码：标签在输入框上方 */
+.formula-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.formula-label {
+  color: #666;
+  font-size: 12px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.formula-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  font-size: 14px;
+  width: 100px;
+  text-align: center;
+}
+
+.formula-operator {
+  color: #666;
+  font-size: 14px;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+/* 结果栏 */
+.result-bar {
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: 500;
+  color: white;
+}
+
+.result-bar.passed {
+  background: #4caf50;
+}
+
+.result-bar.failed {
+  background: #f44336;
+}
+
+/* 标签页 */
+.tab-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  color: #666;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 14px;
+}
+
+.tab-btn:hover {
+  background: #f5f5f5;
+}
+
+.tab-btn.active {
+  background: #e3f2fd;
+  color: #667eea;
+  border-color: #667eea;
+}
+
+/* 最终结论 */
+.final-conclusion {
+  background: #f9f9f9;
+}
+
+/* 旧代码：最终结论的 header 使用默认紫色渐变 */
+/* 新代码：最终结论的 header 使用浅粉色背景 */
+.final-conclusion .section-header {
+  background: #B768CB; /* 浅粉色 */
+ 
+}
+
+.conclusion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conclusion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  /* 旧代码：整段都是彩色背景 */
+  /* background: white; */
+  /* .conclusion-item.passed {
+    background: #4caf50;
+  }
+  .conclusion-item.failed {
+    background: #f44336;
+  } */
+  /* 新代码：恢复白色背景，只在状态文字处显示背景色 */
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #eee;
+}
+
+.conclusion-item span:first-child {
+  color: #333;
+  font-weight: 500;
+}
+
+/* 新代码：只在状态文字处显示背景色 */
+.conclusion-item.passed .passed-text,
+.conclusion-item.failed .failed-text {
+  color: white; /* 在彩色背景上使用白色文字 */
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+.conclusion-item.passed .passed-text {
+  background: #4caf50; /* 绿色背景 */
+}
+
+.conclusion-item.failed .failed-text {
+  background: #f44336; /* 红色背景 */
+}
+
+/* 保留原有的文字颜色样式，以防其他地方使用 */
+.passed-text {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.failed-text {
+  color: #f44336;
+  font-weight: 600;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .modal-content {
+    max-width: 95%;
+    max-height: 95vh;
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .global-params {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .calculation-formula {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .formula-input {
+    width: 100%;
+  }
+}
+

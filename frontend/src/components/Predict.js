@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Predict.css';
+import EvaluateModal from './EvaluateModal';
 
 // API 基础URL配置优先级：
 // 1. 运行时配置（window.env.REACT_APP_API_URL）- 适用于 Tomcat 等生产环境
@@ -34,6 +35,7 @@ function Predict() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [modelInfo, setModelInfo] = useState(null);
+  const [showEvaluateModal, setShowEvaluateModal] = useState(false);
   const navigate = useNavigate();
 
   // 检查是否已登录
@@ -191,11 +193,23 @@ function Predict() {
               </div>
             </div>
             <div className="evaluate-button-container">
-              <button className="evaluate-btn">评定</button>
+              <button 
+                className="evaluate-btn"
+                onClick={() => setShowEvaluateModal(true)}
+              >
+                评定
+              </button>
             </div>
           </div>
         )}
       </div>
+      
+      {/* 评定弹窗 */}
+      <EvaluateModal
+        isOpen={showEvaluateModal}
+        onClose={() => setShowEvaluateModal(false)}
+        predictions={predictions}
+      />
     </div>
   );
 }
