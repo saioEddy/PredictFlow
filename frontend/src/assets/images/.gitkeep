@@ -1,0 +1,5 @@
+# 图片资源文件夹（通过import导入使用）
+# 使用方式：
+# import logo from './assets/images/logo.png';
+# <img src={logo} alt="logo" />
+

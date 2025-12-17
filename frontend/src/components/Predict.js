@@ -112,34 +112,46 @@ function Predict() {
 
         <div className="form-section">
           <h2>输入预测参数</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>载荷</label>
-              <input
-                type="number"
-                step="any"
-                value={load}
-                onChange={(e) => setLoad(e.target.value)}
-                placeholder="请输入载荷值"
-                required
+          <div className="form-with-chart">
+            <div className="form-container">
+              <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                  <label>载荷</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={load}
+                    onChange={(e) => setLoad(e.target.value)}
+                    placeholder="请输入载荷值"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>频率</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={frequency}
+                    onChange={(e) => setFrequency(e.target.value)}
+                    placeholder="请输入频率值"
+                    required
+                  />
+                </div>
+                {error && <div className="error-message">{error}</div>}
+                <button type="submit" disabled={loading} className="submit-btn">
+                  {loading ? '预测中...' : '开始预测'}
+                </button>
+              </form>
+            </div>
+            {/* <div className="chart-container"> */}
+            <div>
+              <img 
+                src="/images/245f9a38-87e4-4a3c-8c5c-a8a24e7a04c4.png" 
+                alt="1倍载荷, 1倍频率冲击加速度时程图"
+                className="chart-image"
               />
             </div>
-            <div className="form-group">
-              <label>频率</label>
-              <input
-                type="number"
-                step="any"
-                value={frequency}
-                onChange={(e) => setFrequency(e.target.value)}
-                placeholder="请输入频率值"
-                required
-              />
-            </div>
-            {error && <div className="error-message">{error}</div>}
-            <button type="submit" disabled={loading} className="submit-btn">
-              {loading ? '预测中...' : '开始预测'}
-            </button>
-          </form>
+          </div>
         </div>
 
         {modelInfo && (
@@ -153,20 +165,33 @@ function Predict() {
         {predictions && (
           <div className="result-section">
             <h2>预测结果</h2>
-            <div className="result-box">
-              <div className="input-display">
-                <h3>输入参数</h3>
-                <p>载荷: {predictions.input_data.load}</p>
-                <p>频率: {predictions.input_data.frequency}</p>
+            <div className="result-with-model">
+              <div className="result-box">
+                <div className="input-display">
+                  <h3>输入参数</h3>
+                  <p>载荷: {predictions.input_data.load}</p>
+                  <p>频率: {predictions.input_data.frequency}</p>
+                </div>
+                <div className="output-display">
+                  <h3>输出参数</h3>
+                  {Object.entries(predictions.predictions).map(([key, value]) => (
+                    <p key={key}>
+                      <strong>{key}:</strong> {typeof value === 'number' ? value.toFixed(4) : value}
+                    </p>
+                  ))}
+                </div>
               </div>
-              <div className="output-display">
-                <h3>预测输出</h3>
-                {Object.entries(predictions.predictions).map(([key, value]) => (
-                  <p key={key}>
-                    <strong>{key}:</strong> {typeof value === 'number' ? value.toFixed(4) : value}
-                  </p>
-                ))}
+              {/* <div className="model-3d-container"> */}
+              <div >
+                <img 
+                  src="/images/af80d348-6294-4c32-9886-71640a663d29.png" 
+                  alt="3D模型可视化"
+                  className="model-3d-image"
+                />
               </div>
+            </div>
+            <div className="evaluate-button-container">
+              <button className="evaluate-btn">评定</button>
             </div>
           </div>
         )}

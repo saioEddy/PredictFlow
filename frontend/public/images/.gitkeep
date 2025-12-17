@@ -1,0 +1,4 @@
+# 静态图片资源文件夹
+# 将图片文件放在此目录下，可以通过 /images/文件名 访问
+# 例如：<img src="/images/logo.png" alt="logo" />
+

@@ -12,7 +12,7 @@
   border-radius: 10px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 800px;
+  max-width: 1200px;
 }
 
 .header {
@@ -53,6 +53,34 @@
   color: #333;
   margin-bottom: 20px;
   font-size: 22px;
+}
+
+.form-with-chart {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.form-container {
+  width: 100%;
+}
+
+.chart-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f9f9f9;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.chart-image {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
 }
 
 .form-group {
@@ -140,10 +168,56 @@
   font-size: 22px;
 }
 
-.result-box {
+.result-with-model {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+  align-items: start;
+}
+
+.result-box {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.model-3d-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f9f9f9;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.model-3d-image {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.evaluate-button-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.evaluate-btn {
+  padding: 12px 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.evaluate-btn:hover {
+  opacity: 0.9;
 }
 
 .input-display,
@@ -174,6 +248,14 @@
 }
 
 @media (max-width: 768px) {
+  .form-with-chart {
+    grid-template-columns: 1fr;
+  }
+
+  .result-with-model {
+    grid-template-columns: 1fr;
+  }
+
   .result-box {
     grid-template-columns: 1fr;
   }

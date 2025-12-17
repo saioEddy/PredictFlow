@@ -82,25 +82,27 @@ if static_dir:
         static_files = StaticFiles(directory=static_resources_dir)
         app.mount("/static", static_files, name="static")
     
-    # 为 React Router 提供支持：所有非 API 路径返回 index.html
-    @app.get("/{full_path:path}")
-    async def serve_frontend(full_path: str):
-        # 排除 API 路径和 static 路径
-        if full_path.startswith("api/") or full_path.startswith("static/"):
-            raise HTTPException(status_code=404, detail="Not found")
-        
-        # 如果请求的是文件（有扩展名），尝试返回该文件
-        if "." in full_path.split("/")[-1]:
-            file_path = os.path.join(static_dir, full_path)
-            if os.path.isfile(file_path):
-                return FileResponse(file_path)
-        
-        # 其他情况返回 index.html（支持 React Router）
-        index_path = os.path.join(static_dir, "index.html")
-        if os.path.exists(index_path):
-            return FileResponse(index_path)
-        else:
-            raise HTTPException(status_code=404, detail="Frontend not found")
+    # 注意：通配路由已移到所有API路由之后（第302行之后）
+    # 这样可以确保API路由优先匹配，不会被通配路由拦截
+    # 旧代码（已注释）：
+    # @app.get("/{full_path:path}")
+    # async def serve_frontend(full_path: str):
+    #     # 排除 API 路径和 static 路径
+    #     if full_path.startswith("api/") or full_path.startswith("static/"):
+    #         raise HTTPException(status_code=404, detail="Not found")
+    #     
+    #     # 如果请求的是文件（有扩展名），尝试返回该文件
+    #     if "." in full_path.split("/")[-1]:
+    #         file_path = os.path.join(static_dir, full_path)
+    #         if os.path.isfile(file_path):
+    #             return FileResponse(file_path)
+    #     
+    #     # 其他情况返回 index.html（支持 React Router）
+    #     index_path = os.path.join(static_dir, "index.html")
+    #     if os.path.exists(index_path):
+    #         return FileResponse(index_path)
+    #     else:
+    #         raise HTTPException(status_code=404, detail="Frontend not found")
 
 # 简单的用户认证（不需要数据库）
 # 实际项目中应该使用数据库和密码哈希
@@ -299,6 +301,28 @@ async def get_model_info(username: str = Depends(verify_token)):
         "inputs": model_data['inputs'],
         "outputs": model_data['outputs']
     }
+
+# 为 React Router 提供支持：所有非 API 路径返回 index.html
+# 注意：这个通配路由必须放在所有API路由之后，确保API路由优先匹配
+if static_dir:
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        # 排除 API 路径和 static 路径（这些应该已经被上面的路由处理了）
+        if full_path.startswith("api/") or full_path.startswith("static/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        
+        # 如果请求的是文件（有扩展名），尝试返回该文件
+        if "." in full_path.split("/")[-1]:
+            file_path = os.path.join(static_dir, full_path)
+            if os.path.isfile(file_path):
+                return FileResponse(file_path)
+        
+        # 其他情况返回 index.html（支持 React Router）
+        index_path = os.path.join(static_dir, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+        else:
+            raise HTTPException(status_code=404, detail="Frontend not found")
 
 if __name__ == "__main__":
     import uvicorn
