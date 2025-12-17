@@ -172,7 +172,13 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content evaluate-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>R-CCM评定明细</h2>
+          <div className="header-title-section">
+            <h2>R-CCM评定明细</h2>
+            {/* 新代码：添加是否通过状态 */}
+            <span className={`header-status ${allPassed ? 'status-passed' : 'status-failed'}`}>
+              {allPassed ? '通过' : '不通过'}
+            </span>
+          </div>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
         

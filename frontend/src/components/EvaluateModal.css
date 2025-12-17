@@ -53,6 +53,30 @@
   font-size: 24px;
 }
 
+/* 新代码：标题区域布局 */
+.header-title-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* 新代码：是否通过状态样式 */
+.header-status {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.header-status.status-passed {
+  background: #4caf50; /* 绿色背景 */
+}
+
+.header-status.status-failed {
+  background: #f44336; /* 红色背景 */
+}
+
 .close-btn {
   background: transparent;
   border: none;
