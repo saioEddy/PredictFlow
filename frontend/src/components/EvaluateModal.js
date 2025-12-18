@@ -156,17 +156,25 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
   const stressThreshold = 275; // σ总_破管的阈值（MPa）
   const showAllEvaluations = totalStress < stressThreshold;
   
-  // 旧代码：allPassed 只考虑评定项的通过状态
-  /* const allPassed = showAllEvaluations 
-    ? Object.values(evaluations).every(e => e.passed)
-    : evaluations.strain.passed && evaluations.stemDeformation.passed; */
-  // 新代码：allPassed 需要同时考虑 σ总_破管 的值和评定项的通过状态
-  // 如果 σ总_破管 >= 阈值，直接判定为超出弹性范围
-  const allPassed = totalStress < stressThreshold 
+  // 新代码：判断是否在弹性范围内（仅根据 σ总_破管 的值）
+  // totalStress < 275：弹性范围内
+  // totalStress >= 275：塑性范围内
+  const isElasticRange = totalStress < stressThreshold;
+  
+  // 旧代码：allPassed 的逻辑
+  /* const allPassed = totalStress < stressThreshold 
     ? (showAllEvaluations 
         ? Object.values(evaluations).every(e => e.passed)
         : evaluations.strain.passed && evaluations.stemDeformation.passed)
-    : false; // σ总_破管 >= 阈值时，直接判定为超出弹性范围
+    : false; */
+  // 新代码：allPassed 根据弹性/塑性范围判断
+  // 弹性范围内：判断所有显示的评定项
+  // 塑性范围内：只判断应变ε和阀杆变形S
+  const allPassed = isElasticRange
+    ? (showAllEvaluations 
+        ? Object.values(evaluations).every(e => e.passed)
+        : evaluations.strain.passed && evaluations.stemDeformation.passed)
+    : (evaluations.strain.passed && evaluations.stemDeformation.passed); // 塑性范围内只判断应变ε和阀杆变形S
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -200,7 +208,10 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
           
           {/* 状态栏 */}
           <div className="status-bar">
-            {allPassed ? '弹性范围内' : '超出弹性范围'}
+            {/* 旧代码：根据 allPassed 判断 */}
+            {/* {allPassed ? '弹性范围内' : '超出弹性范围'} */}
+            {/* 新代码：只根据 σ总_破管 是否超过 275 来判断 */}
+            {isElasticRange ? '弹性范围内' : '塑性范围内'}
           </div>
 
           {/* 旧代码：始终显示所有评定内容 */}
