@@ -61,6 +61,9 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
     const SmBending = activeTab === 'continuous' ? SmBendingContinuous : SmBendingDiscontinuous;
     const maxStrain = 0.43; // 材料的断裂极限应变
     const gap = 2; // 间隙 (mm)
+    
+    // 新代码：确保数值类型一致，避免字符串和数字比较的问题
+    const stemDeformationNum = Number(stemDeformation) || 0;
     const material = 'M1114-20MN5M'; // 当前材料
 
     // 计算总应力
@@ -114,9 +117,12 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
         passed: (strain + epsilonOther) < maxStrain
       },
       stemDeformation: {
-        deformation: stemDeformation,
+        deformation: stemDeformationNum, // 使用转换后的数字类型
         gap: gap,
-        passed: stemDeformation < gap
+        // 旧代码：可能存在类型不一致的问题（如果 stemDeformation 是字符串）
+        /* passed: stemDeformation < gap */
+        // 新代码：确保使用数字类型进行比较
+        passed: stemDeformationNum < gap
       }
     };
 
