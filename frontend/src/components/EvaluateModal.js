@@ -253,7 +253,12 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                     step="0.01"
                   />
                 </div>
-                <span className="formula-operator">&lt;</span>
+                {/* 旧代码：固定显示 < */}
+                {/* <span className="formula-operator">&lt;</span> */}
+                {/* 新代码：根据实际计算结果动态显示 < 或 > */}
+                <span className="formula-operator">
+                  {(evaluations.membraneStress.sigmaM_burst + evaluations.membraneStress.sigmaM_other) < evaluations.membraneStress.limit ? '<' : '>'}
+                </span>
                 <div className="formula-item">
                   <span className="formula-label">Sm(Mpa)</span>
                   <input type="text" className="formula-input" value={evaluations.membraneStress.limit} readOnly />
@@ -317,7 +322,12 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                     step="0"
                   />
                 </div>
-                <span className="formula-operator">&lt;</span>
+                {/* 旧代码：固定显示 < */}
+                {/* <span className="formula-operator">&lt;</span> */}
+                {/* 新代码：根据实际计算结果动态显示 < 或 > */}
+                <span className="formula-operator">
+                  {(evaluations.membraneBending.sigmaMB_burst + evaluations.membraneBending.sigmaMB_other) < evaluations.membraneBending.limit ? '<' : '>'}
+                </span>
                 <div className="formula-item">
                   {/* 旧代码：固定显示 1.5Sm */}
                   {/* <span className="formula-label">1.5Sm (Mpa)</span> */}
@@ -371,7 +381,12 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                     step="0.0001"
                   />
                 </div>
-                <span className="formula-operator">&lt;</span>
+                {/* 旧代码：固定显示 < */}
+                {/* <span className="formula-operator">&lt;</span> */}
+                {/* 新代码：根据实际计算结果动态显示 < 或 > */}
+                <span className="formula-operator">
+                  {(evaluations.strain.epsilon_burst + evaluations.strain.epsilon_other) < evaluations.strain.limit ? '<' : '>'}
+                </span>
                 <div className="formula-item">
                   <span className="formula-label">ε_材料的断裂极限应变ε</span>
                   {/* 旧代码：固定保留两位小数 */}
@@ -405,7 +420,12 @@ function EvaluateModal({ isOpen, onClose, predictions }) {
                   {/* 新代码：与预测页面保持一致，显示4位小数 */}
                   <input type="text" className="formula-input" value={evaluations.stemDeformation.deformation.toFixed(4)} readOnly />
                 </div>
-                <span className="formula-operator">&lt;</span>
+                {/* 旧代码：固定显示 < */}
+                {/* <span className="formula-operator">&lt;</span> */}
+                {/* 新代码：根据实际计算结果动态显示 < 或 > */}
+                <span className="formula-operator">
+                  {evaluations.stemDeformation.deformation < evaluations.stemDeformation.gap ? '<' : '>'}
+                </span>
                 <div className="formula-item">
                   <span className="formula-label">间隙 (mm)</span>
                   <input type="text" className="formula-input" value={evaluations.stemDeformation.gap} readOnly />
