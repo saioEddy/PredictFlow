@@ -148,7 +148,7 @@ function Predict() {
             {/* <div className="chart-container"> */}
             <div>
               <img 
-                src="/images/245f9a38-87e4-4a3c-8c5c-a8a24e7a04c4.png" 
+                src="/images/折线图.jpg" 
                 alt="1倍载荷, 1倍频率冲击加速度时程图"
                 className="chart-image"
               />
@@ -186,7 +186,7 @@ function Predict() {
               {/* <div className="model-3d-container"> */}
               <div >
                 <img 
-                  src="/images/af80d348-6294-4c32-9886-71640a663d29.png" 
+                  src="/images/阀门.jpg" 
                   alt="3D模型可视化"
                   className="model-3d-image"
                 />
