@@ -1,12 +1,19 @@
 #!/bin/bash
 # PredictFlow 启动脚本
 # 启动前端（Tomcat）和后端服务
+# 用法: 
+#   ./start_predictflow.sh           # 使用默认端口 8000
+#   ./start_predictflow.sh 9000      # 指定后端端口为 9000
+#   BACKEND_PORT=9000 ./start_predictflow.sh  # 使用环境变量指定端口
 
 set -euo pipefail
 
 # 获取脚本所在目录（部署目录）
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+
+# 后端端口配置（支持命令行参数、环境变量、默认值）
+BACKEND_PORT="${1:-${BACKEND_PORT:-8000}}"
 
 # 配置
 TOMCAT_DIR="$SCRIPT_DIR/apache-tomcat-9.0.113"
@@ -35,6 +42,17 @@ echo_warn() {
 
 echo_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# 检查后端端口是否被占用
+check_backend_port_available() {
+    if lsof -Pi :$BACKEND_PORT -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+        echo_error "后端端口 $BACKEND_PORT 已被占用！"
+        echo_info "占用进程信息:"
+        lsof -Pi :$BACKEND_PORT -sTCP:LISTEN
+        return 1
+    fi
+    return 0
 }
 
 # 检查后端是否已运行
@@ -75,8 +93,14 @@ start_backend() {
         echo_warn "后端服务已在运行中（PID: $(cat "$BACKEND_PID_FILE")）"
         return 0
     fi
+    
+    # 检查后端端口是否可用
+    if ! check_backend_port_available; then
+        echo_error "无法启动后端服务"
+        return 1
+    fi
 
-    echo_info "正在启动后端服务..."
+    echo_info "正在启动后端服务 (端口: $BACKEND_PORT)..."
     
     # 检查后端文件是否存在
     if [ ! -f "$SCRIPT_DIR/backend/predictflow-api.shiv" ]; then
@@ -84,15 +108,30 @@ start_backend() {
         return 1
     fi
     
-    # 检查 Python 是否存在
-    if [ ! -f "$SCRIPT_DIR/python-portable/bin/python3" ]; then
-        echo_error "Python 可执行文件不存在: $SCRIPT_DIR/python-portable/bin/python3"
+    # 检查 Python 是否存在（优先使用便携版，不存在则使用系统Python）
+    local python_cmd
+    if [ -x "$SCRIPT_DIR/python/bin/python3" ]; then
+        python_cmd="$SCRIPT_DIR/python/bin/python3"
+        echo_info "使用便携版Python: $python_cmd"
+    elif command -v python3 >/dev/null 2>&1; then
+        python_cmd="python3"
+        echo_warn "便携版Python不可用，使用系统Python: $(which python3)"
+        echo_warn "Python版本: $(python3 --version)"
+    else
+        echo_error "未找到可用的Python3"
         return 1
     fi
     
-    # 启动后端（后台运行，保存 PID）
+    # 启动后端（后台运行，保存 PID，指定端口）
     cd "$SCRIPT_DIR"
-    nohup "$SCRIPT_DIR/python-portable/bin/python3" "$SCRIPT_DIR/backend/predictflow-api.shiv" \
+    
+    # 设置 LD_LIBRARY_PATH 优先使用便携版 Python 的 lib 目录
+    # 解决 CentOS 7 系统 libstdc++ 版本过低(CXXABI_1.3.7)导致 numpy 2.3.5 无法导入的问题
+    # numpy 2.3.5 需要 CXXABI_1.3.9 支持
+    export LD_LIBRARY_PATH="$SCRIPT_DIR/python/lib:${LD_LIBRARY_PATH:-}"
+    
+    nohup "$python_cmd" "$SCRIPT_DIR/backend/predictflow-api.shiv" \
+        --port "$BACKEND_PORT" \
         > "$BACKEND_LOG" 2> "$BACKEND_ERROR_LOG" &
     
     local backend_pid=$!
@@ -101,7 +140,7 @@ start_backend() {
     # 等待一下，检查进程是否还在运行
     sleep 2
     if ps -p "$backend_pid" > /dev/null 2>&1; then
-        echo_info "✓ 后端服务启动成功（PID: $backend_pid）"
+        echo_info "✓ 后端服务启动成功（PID: $backend_pid, 端口: $BACKEND_PORT）"
         echo_info "  日志文件: $BACKEND_LOG"
         echo_info "  错误日志: $BACKEND_ERROR_LOG"
         return 0
@@ -164,6 +203,7 @@ main() {
     echo "部署目录: $SCRIPT_DIR"
     echo "Tomcat 目录: $TOMCAT_DIR"
     echo "后端文件: $SCRIPT_DIR/backend/predictflow-api.shiv"
+    echo "后端端口: $BACKEND_PORT"
     echo ""
     
     # 启动后端
@@ -185,8 +225,8 @@ main() {
     echo "=========================================="
     echo ""
     echo "前端地址: http://localhost:8080"
-    echo "后端 API: http://localhost:8000"
-    echo "API 文档: http://localhost:8000/docs"
+    echo "后端 API: http://localhost:$BACKEND_PORT"
+    echo "API 文档: http://localhost:$BACKEND_PORT/docs"
     echo ""
     echo "查看后端日志: tail -f $BACKEND_LOG"
     echo "查看后端错误: tail -f $BACKEND_ERROR_LOG"
